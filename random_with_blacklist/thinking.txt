@@ -1,0 +1,65 @@
+Random number generator:
+==============================================================================================
+
+I will use one I found on the internet. Given a seed, it generates a series of pseudo-random numbers. The seed can come from the random library, but that will be the one and only call to it.
+
+The naive solution:
+==============================================================================================
+
+If I have a full range of numbers, like:
+full_list = [0, 1, 2, 3, 4, 5, 6]
+
+...and some are blacklisted out, like 2, 3, and 5, it would seem that I could pick a random entry within full_list, then advance to the next entry if the found one happens to be blacklisted.
+
+Problem: this results in non-blacklisted numbers not having an equal chance of being chosen. If we sub in 4 for 2 or 3, then 4s become more likely than others.
+
+It's better to create an actual list, like so:
+actual_list = [0, 1, 4, 6]
+
+Of course, this consumes too much memory, so we have to find a clever way to approximate this feature. Perhaps a recursive dictionary search can do it.
+
+How to deal with the blacklist:
+==============================================================================================
+
+Suppose the top of the range is 7 and the blacklist consists of 2, 3, 5.
+
+Without the blacklist, the numbers would be:
+full_list = [0, 1, 2, 3, 4, 5, 6]
+
+With the blacklist, the actual available numbers would be:
+actual_list = [0, 1, 4, 6]
+
+We want to create a range list. Each entry is a tuple that defines how a range of numbers in actual list maps to the same range of numbers in full_list. Like so:
+
+(0, 0, 2)
+(2, 4, 1)
+(3, 6, 1)
+
+How to create range list:
+
+First, we need to sort black list items. Picture the full list of integers, with blacklisted ones represented by letters:
+
+--------a---bc---d
+^
+
+With the a, we make a range entry starting where the ^ is
+
+entry = (0, 0, 8)
+
+Then we move ^ to:
+
+--------a---bc---d
+         ^
+
+Processing b gets:
+
+entry = (8, 9, 4)
+
+Then we move ^ to:
+
+--------a---bc---d
+             ^
+
+Because c overlaps with ^, we advance it again.
+
+Once we've built the range list, it's easy to a dictionary search through it.
