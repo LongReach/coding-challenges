@@ -14,7 +14,7 @@ For better or worse, this is all my own work.
 
 ## Something I (Re-)Learned From These Exercises
 
-From revisiting code that was months old, I found that I had no %#@$ idea how the less well-commented solutions actually worked. Even though the logic was entirely mine. 
+From revisiting code that was months old, I found that I had no idea how the less well-commented solutions actually worked. Even though the logic was entirely mine. 
 
 This reminded me of exactly why it's so important to have well-commented code. When you've only **JUST** written it, its logic seems perfectly obvious to you, because all your design reasoning is still fresh in your head. However, once that reasoning evaporates, thanks to the passage of time, the code becomes a hell of a lot less intuitive. You stare at it and you stare at it and you don't know what you yourself were even thinking, which means that any **OTHER** person who looks at it will be even **MORE** confused than you are.
 
