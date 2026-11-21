@@ -1,0 +1,156 @@
+For one turn, we have b buckets. Each pig can eat from some number of buckets. For example:
+
+a b c d e f g h
+---------------
+1
+  2
+    3
+      4
+        5
+          6
+            7
+---
+8 buckets, 7 pigs, 1 dead pig at most
+
+Or:
+
+a b c d e f g h
+---------------
+1 1
+  2 2
+    3 3
+      4 4
+        5 5
+          6 6
+---
+8 buckets, 6 pigs, 2 dead pigs at most
+
+Or:
+
+a b c d e f g h
+---------------
+1 1 1 1
+  2 2 2 2
+    3 3 3 3
+      4 4 4 4
+---
+8 buckets, 4 pigs, 4 dead pigs at most
+
+Can we be more efficient? What about:
+
+a b c d e f g h
+---------------
+1 1 1 1
+2 2     2 2
+3   3   3   3
+---
+8 buckets, 3 pigs, 3 dead pigs at most
+1 outcome: 0 pigs left
+3 outcomes: 1 pig left
+3 outcomes: 2 pigs left
+1 outcome: 3 pigs left
+
+For a particular bucket, each pig can be "on" or "off". There are 2^p possible combinations per bucket, which means that 2^p buckets can each have their own unique combination.
+
+===============================
+
+With two turns, how many pigs do we need for same eight buckets?
+
+a b c d e f g h
+---------------
+1 1     1 1
+2   2   2   2
+---
+If it's a or e, we need another pig to disambiguate
+If it's any other, the surviving pigs will be sufficient
+
+a b c d e f g h i j k l m n o p
+-------------------------------
+1 1 1 1 1 1 1 1
+2 2 2 2         2 2 2 2
+3 3     3 3     3 3     3 3
+---
+
+a b c d e f g h i j k l m n o p
+-------------------------------
+1 1 1 1         1 1 1 1
+2 2     2 2     2 2     2 2
+3   3   3   3   3   3   3   3
+---
+Turn 2
+
+If 1, 2, use 3 to decide
+If 1, 3, use 2 to decide
+If 2, 3, use 1 to decide
+
+a b c d e f g h i j k l m n o p
+-------------------------------
+1 1 1 1 1     1 1 1 1
+2 2 2     2 2
+3     3 3 3 3
+---
+
+a b c d
+-------
+1
+  2
+---
+
+Blah, this is too complicated.
+
+===============================
+
+Next idea for two turns:
+
+For a particular bucket, each pig can not eat (0), eat on the first turn (1), or eat on the second (2). There are 3^p possible combinations per bucket, which means that 3^p buckets can each have their own unique combination.
+
+The numbers in the tables below are now 0 - 2
+
+    a b c
+    -----
+p0: 1 2 0
+
+If p0 dies on first turn, it's a. If dies on second turn, it's b. Otherwise, c.
+
+
+    a b c d
+    -------
+p0: 1 0 2 0
+p1: 0 1 0 0
+
+If p0 dies on first turn, it's a.
+If p1 dies on first turn, it's b.
+If neither dies on first turn, the death of p0 on second turn will determine outcome.
+
+    a b c d e f g h i
+    -----------------
+p0: 0 0 0 1 1 1 2 2 2
+p1: 0 1 2 0 1 2 0 1 2
+
+Look at the unique combinations.
+
+If bucket is a, neither pig will die
+If bucket is b, p0 lives, p1 dies on first turn
+If bucket is c, p0 lives, p1 dies on second turn
+If bucket is d, p0 dies on first turn, p1 lives
+If bucket is e, both pigs die on first turn
+If bucket is f, p0 dies on first turn, p1 on second
+If bucket is g, p0 dies on second turn, p0 lives
+If bucket is h, p0 dies on second turn, p1 on first turn
+If bucket is i, p0 dies on second turn, p1 on second turn
+
+Generalized:
+
+If p0 never dies, the bucket is in a - c.
+If p0 dies on first turn, the bucket is in d - f
+If p0 dies on second turn, the bucket is in g - i
+
+===============================
+
+Arbitrary number of turns:
+
+Number of buckets that can be covered = (T+1) ^ p
+b = (T+1) ^ p
+p = ln(b) / ln(T+1)
+
+p = math.log(b, T+1)
