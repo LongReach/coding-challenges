@@ -221,3 +221,32 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# Specific files
+
+.idea/
+
+bin_move_ops/bin_move_ops.py
+bin_move_ops/bin_move_ops2.py
+bin_move_ops/bin_move_ops3.py
+bin_move_ops/thinking.txt
+grid_queries/grid_queries.py
+grid_queries/grid_queries2.py
+poor_pigs/poor_pigs.py
+poor_pigs/poor_pigs2.py
+random_with_blacklist/random_with_blacklist.py
+robots_and_walls/robots.py
+robots_and_walls/robots2.py
+scratch/
+stock_prices/stock.py
+stock_prices/stock2.py
+stock_prices/stock3.py
+stock_prices/stock4.py
+water_pools/water_pools.py
+with_teleportations/teleportations.py
+with_teleportations/teleportations2.py
+with_teleportations/teleportations3.py
+scratch.py

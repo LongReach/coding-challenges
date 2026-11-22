@@ -1,0 +1,31 @@
+Instructions for Claude
+----------
+
+Overall task
+---
+
+For each subdirectory (e.g. robots_and_walls), create a README.md inside that folder. Then, go through any Python or thinking.txt files that are present and find the URL link to leetcode's website. Collect the problem description from the webpage and put it into README.md. At the top of README.md, put:
+* The URL to the problem
+* "Difficulty" followed by "Easy", "Medium", or "Hard"
+* "Solved" followed by "yes" or "no", depending on if I solved the problem. I've indicated this either in a Python file or thinking.txt.
+
+Stage 1 (Done)
+---
+
+Do this only for robots_and_walls/ to start with.
+
+Stage 2 (Done)
+---
+
+Do this for all other folders.
+
+Stage 3
+---
+
+Please put links to each problem's folder in the main README. You will find the section I created for this purpose in the README.
+
+The links should be given in table form, with the following headers:
+* Folder Name: each entry will be link to the appropriate folder
+* Problem Name: each entry comes from the top of each problem-specific README, e.g. 407. Trapping Rain Water II
+* Difficulty: each entry will be easy, medium, or hard, depending on the problem itself
+* Solved: each entry will be yes or no, depending on if I solved the problem
