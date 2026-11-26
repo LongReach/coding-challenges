@@ -45,7 +45,6 @@ class Solution:
         start_state = (1, 2, True)
         # Each entry: state, turn
         to_explore = [(start_state, 0)]
-        to_recalculate = []
 
         # Make an entry for this state
         self.states[start_state] = StateEntry(0, 0)
@@ -54,116 +53,110 @@ class Solution:
 
         state_to_parents: Dict[Tuple[int, int, bool], List[Tuple[int, int, bool]]] = {start_state: []}
 
-        # Idea:
-        # Pull state from explore list. Add its children that haven't been visited to explore list.
-        # If state is a definite draw, mark it as such and put it on recompute stack.
-        # Same if state resolves trivially.
+        # We process entries on the to-explore queue, until we either solve the puzzle or no entries are left (a draw)
 
-        while len(to_explore) > 0 or len(to_recalculate) > 0:
+        while len(to_explore) > 0:
 
-            if len(to_explore) > 0:
-                explore_state, explore_turn = to_explore.pop(0)
-                self.print(f"Exploring state {explore_state}, turn {explore_turn}...")
+            explore_state, explore_turn = to_explore.pop(0)
+            self.print(f"Exploring state {explore_state}, turn {explore_turn}...")
 
-                mouse_node = explore_state[0]
-                cat_node = explore_state[1]
-                mouse_turn = explore_state[2]
+            mouse_node = explore_state[0]
+            cat_node = explore_state[1]
+            mouse_turn = explore_state[2]
 
-                if mouse_turn:
-                    sortable_list = [((node, cat_node, False), self.dist_to_hole[node]) for node in self.graph[mouse_node]]
-                    sortable_list.sort(key=lambda x: x[1])
-                    neighbor_list = [x[0] for x in sortable_list]
-                else:
-                    sortable_list = [((mouse_node, node, True), self.dist_to_hole[node]) for node in self.graph[cat_node] if node > 0]
-                    sortable_list.sort(key=lambda x: x[1])
-                    neighbor_list = [x[0] for x in sortable_list]
+            # Both players will prefer to explore moves that take them closer to the mouse hole before moves that take
+            # then further.
+            if mouse_turn:
+                sortable_list = [((node, cat_node, False), self.dist_to_hole[node]) for node in self.graph[mouse_node]]
+                sortable_list.sort(key=lambda x: x[1])
+                neighbor_list = [x[0] for x in sortable_list]
+            else:
+                sortable_list = [((mouse_node, node, True), self.dist_to_hole[node]) for node in self.graph[cat_node] if node > 0]
+                sortable_list.sort(key=lambda x: x[1])
+                neighbor_list = [x[0] for x in sortable_list]
 
-                for neighbor in neighbor_list:
-                    if state_to_parents.get(neighbor) is None:
-                        state_to_parents[neighbor] = []
+            # Step one of exploring a state: get its neighbors on explore queue, unless already there. Also, fill
+            # out the state_to_parents table.
+
+            for neighbor in neighbor_list:
+                if state_to_parents.get(neighbor) is None:
+                    state_to_parents[neighbor] = []
+                if explore_state not in state_to_parents[neighbor]:
                     state_to_parents[neighbor].append(explore_state)
-                    if self.states.get(neighbor) is None:
-                        # Make an entry for this neighbor
-                        self.states[neighbor] = StateEntry(0, 0)
-                        tup = (neighbor, explore_turn+1)
-                        if explore_turn < max_turns:
-                            to_explore.append(tup)
 
-                # Put in on recompute stack
-                to_recalculate.append(explore_state)
+                if self.states.get(neighbor) is None:
+                    # Make an entry for this neighbor
+                    self.states[neighbor] = StateEntry(0, 0)
+                    tup = (neighbor, explore_turn+1)
+                    if explore_turn < max_turns:
+                        to_explore.append(tup)
 
-            while len(to_recalculate) > 0:
-                recalculate_state = to_recalculate.pop()
+            # Step two of exploring a state: try to resolve it. Maybe mark parents for re-exploration, if needed.
+            # Notice how the parents go at the beginning of the queue instead of at the end, as with states that
+            # need exploring for the first time.
 
-                state_entry = self.states[recalculate_state]
-                if state_entry.result in [1, 2]:
-                    # Recalculation not needed
-                    self.print(f"No calculation needed for {recalculate_state}, result {state_entry.result}, turn {state_entry.turns}...")
-                    continue
-                self.print(f"Calculating state {recalculate_state}, turn {state_entry.turns}...")
+            state_entry = self.states[explore_state]
+            if state_entry.result in [1, 2]:
+                # Recalculation not needed
+                self.print(f"No calculation needed for {explore_state}, result {state_entry.result}, turn {state_entry.turns}...")
+                continue
+            self.print(f"Calculating state {explore_state}, turn {state_entry.turns}...")
 
-                mouse_node = recalculate_state[0]
-                cat_node = recalculate_state[1]
-                mouse_turn = recalculate_state[2]
+            state_changed = False
 
-                if mouse_turn:
-                    neighbor_list = [(node, cat_node, False) for node in self.graph[mouse_node]]
-                else:
-                    neighbor_list = [(mouse_node, node, True) for node in self.graph[cat_node] if node > 0]
+            # Can we solve this state trivially?
+            if mouse_node == 0 or mouse_node == cat_node:
+                state_entry.result = 1 if mouse_node == 0 else 2
+                state_entry.terminal_state = True
+                state_changed = True
+                self.print(f"State {explore_state} trivially solved for {state_entry.result}.")
 
-                state_changed = False
+            if not state_changed:
+                # Can we find a victory or a draw from children?
 
-                # Can we solve this state trivially?
-                if mouse_node == 0 or mouse_node == cat_node:
-                    state_entry.result = 1 if mouse_node == 0 else 2
-                    state_entry.terminal_state = True
+                this_player_victory = 1 if mouse_turn else 2
+                other_player_victory = 2 if mouse_turn else 1
+                this_player_idx = this_player_victory
+                other_player_idx = other_player_victory
+                draw_idx = 0
+                counts = [0, 0, 0]
+
+                # Search the neighbors to see if they've been solved
+                for neighbor in neighbor_list:
+                    neighbor_state_entry = self.states.get(neighbor)
+                    if neighbor_state_entry is None:
+                        counts[draw_idx] += 1
+                    else:
+                        counts[neighbor_state_entry.result] += 1
+
+                if counts[this_player_idx] > 0:
+                    # The player whose turn it is wins this state
+                    state_entry.result = this_player_victory
+                    self.print(f"State {explore_state} solved for {this_player_victory}.")
                     state_changed = True
-                    self.print(f"State {recalculate_state} trivially solved for {state_entry.result}.")
+                elif counts[other_player_idx] == len(neighbor_list):
+                    # The other player wins this state
+                    state_entry.result = other_player_victory
+                    self.print(f"State {explore_state} solved for {other_player_victory}.")
+                    state_changed = True
 
-                if not state_changed:
-                    # Can we find a victory or a draw from children?
+            if state_changed:
+                # This state has been resolved to a victory or defeat for the player whose turn it is.
+                # Now, we must add parent states to the queue for re-exploration.
 
-                    this_player_victory = 1 if mouse_turn else 2
-                    other_player_victory = 2 if mouse_turn else 1
-                    this_player_idx = this_player_victory
-                    other_player_idx = other_player_victory
-                    draw_idx = 0
-                    counts = [0, 0, 0]
+                # Have we solved the puzzle?
+                if self.states[start_state].result in [1, 2]:
+                    break
 
-                    # Search the neighbors to see if they've been solved
-                    for neighbor in neighbor_list:
-                        neighbor_state_entry = self.states.get(neighbor)
-                        if neighbor_state_entry is None:
-                            counts[draw_idx] += 1
-                        else:
-                            counts[neighbor_state_entry.result] += 1
+                # We must try to solve the parents now
+                self.print(f"State {explore_state} was solved, now adding parents to to-recalculate list")
+                for parent_state in state_to_parents[explore_state]:
+                    parent_turn = self.states[parent_state].turns
+                    if (parent_state, parent_turn) not in explore_state:
+                        self.print(f"Adding state to recalculate {parent_state}")
+                        to_explore.insert(0, (parent_state, parent_turn))
 
-                    if counts[this_player_idx] > 0:
-                        # The player whose turn it is wins this state
-                        state_entry.result = this_player_victory
-                        self.print(f"State {recalculate_state} solved for {this_player_victory}.")
-                        state_changed = True
-                    elif counts[other_player_idx] == len(neighbor_list):
-                        # The other player wins this state
-                        state_entry.result = other_player_victory
-                        self.print(f"State {recalculate_state} solved for {other_player_victory}.")
-                        state_changed = True
-
-                if state_changed:
-                    # Have we solved the puzzle?
-                    if self.states[start_state].result in [1, 2]:
-                        break
-
-                    # We must try to solve the parents now
-                    self.print(f"State {recalculate_state} was solved, now adding parents to to-recalculate list")
-                    for parent_state in state_to_parents[recalculate_state]:
-                        if parent_state not in to_recalculate:
-                            self.print(f"Adding state to recalculate {parent_state}")
-                            to_recalculate.append(parent_state)
-
-            # Have we solved the puzzle?
-            if self.states[start_state].result in [1, 2]:
-                break
+            # End while loop
 
         final_state_entry = self.states[start_state]
         self.print(f"Final result: {final_state_entry.result}")
