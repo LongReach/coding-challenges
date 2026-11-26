@@ -1,0 +1,184 @@
+Problem: https://leetcode.com/problems/cat-and-mouse/
+Difficulty: hard
+Solved: no
+
+Initial Thinking:
+========================================================
+
+The state of the whole system can be represented like so:
+
+(mouse_node, cat_node, mouse_turn)
+
+mouse_node: number of node that the mouse is on
+cat_node: number of node that the mouse is on
+mouse_turn: True if it's the mouse's turn, False if it's the cat's
+
+The opening state would be:
+
+(1, 2, True)
+
+Each possible state can yield a mouse victory, a cat victory, or a draw. If it's the mouse's turn and any child state (a turn the mouse can take) yields a mouse victory, then the current state also yields a mouse victory. If all of the child states yield a cat victory, then the current state yields a cat victory.
+
+The same idea applies in reverse for the cat. When we get a clear victory for a state, we can save this result in a state lookup table to cut down on computation.
+
+Draws are more challenging to determine. Whether a state yields a draw depends on the path taken to get there (the states covered on previous turns), so it's not helpful to save a draw result in the state lookup table. Maybe the draw result will change to a victory if the game reaches the state by some other route.
+
+Solutions
+========================================================
+
+Solution idea 1
+---------------
+
+I tried a depth-first solution. You keep exploring states recursively, stopping when you've hit a game-ending state or a previously visited one. The trouble is, if there a lot of possible states that can be reached in the game, recursion can go pretty deep without hitting a victory state.
+
+Solution idea 2:
+---------------
+
+What about breadth-first search? If the game can be won by one player or the other within t turns, we find that out by searching every possible state that can be reached within t turns. Each time we resolve a state for one player or the other, we try to resolve its parent states (i.e. any state that's known to lead to it).
+
+If we've covered all the states that can be reached in t turns, then we have to examine the states that can be reached in t+1 turns. We keep going with this until there's no reachable state we haven't considered yet.
+
+Optimizations:
+
+Optimization 1: we limit the number of turns. At worst, the mouse travels through all the nodes in the graph to get to the hole.
+
+Optimization 2: we try to explore states that seem MORE LIKELY to lead to a victory before we explore those that are less likely.
+
+Exploration
+------
+
+We do a depth-first search through possible states, starting with opening state.
+
+Example 1 (from webpage):
+
+(1, 2, True)
+(3, 2, False)
+
+Cat can go to 4 or 5
+
+If it goes to 4, the resulting sequence will be:
+
+(3, 4, True)
+(5, 4, False)
+(5, 3, True)
+(0, 3, False): mouse victory
+
+If the cat goes to 5 instead, the resulting sequence will be:
+
+(3, 5, True)
+(4, 5, False)
+(4, 2, True)
+(3, 2, False): a draw, players get back to previous state
+
+The cat will always choose a draw over letting the mouse win. The mouse will do the same in reverse.
+
+General Approach
+------
+
+To find the outcome of a particular state, we recursively explore its neighbors.
+
+For a mouse turn, if there is a mouse victory for any neighbor, there is a mouse victory for that state. If all neighbors are cat victories, then there will be a cat victory for that state. Otherwise, if any neighbors return to a previously visited state, it's a draw.
+
+Similar idea for a cat turn.
+
+Dynamic programming use: we store the result for a state along with the number of turns it took to get there. Any time we check a neighbor, we used the stored result unless the number of turns to get there is less than the stored number of turns. In that case, we recalculate everything and store a new result.
+
+---
+
+Some puzzling, from before I thought of storing the turn number.
+
+We put the starting state on a list. Then we repeatedly:
+
+1. Pull state
+
+========
+
+graph = [[5,6],[3,4],[6],[1,4,5],[1,3,5],[0,3,4,6],[0,2,5]]
+testcase 51/96
+should be: 2
+
+(1, 2, True)
+(3, 2, False)
+(3, 6, True)
+
+(3, 6, True) should be a cat victory, but is marked as a draw
+(5, 6, False) is correctly marked as cat victory
+
+What about (4, 6, False)? Marked as draw, which is false.
+
+What about (4, 5, True)? Marked as draw, which is false.
+
+What about (1, 5, False)? Marked as draw, which is false.
+
+What about (1, 3, True)? Marked as cat victory
+What about (1, 4, True)? Marked as cat victory
+
+Why is (1, 5, False) a draw?
+
+=============================
+
+Non-recursive solution
+
+In the state table, we map a state to its result and parent.
+
+Pull state and parent from to-explore list. Can we solve it? If so, record solution and parent in state table.
+
+If not, collect list of neighbors, add to to-explore list and put current state at end.
+
+Dealing with draws: for each neighbor that's a draw...
+
+=============================
+
+Recursive solution:
+
+We explore possible states recursively, keeping a list of previously visited states. We also save states and their outcomes in a lookup table.
+
+For each explored state, we first try to find a solution without recursing. We consider only neighbors that have trivial outcomes or ones already stored in the lookup table. If we can compute a definite cat or mouse victory, we save that as the outcome for the state.
+
+If this doesn't work, we recursively explore neighbors, stopping when we hit one previously explored.
+
+Insight:
+---
+
+If a state is a draw, due to having a previously visited state as a neighbor, then maybe one of those previously visited states is resolvable. We should back out.
+
+We go through neighbors until we encounter victory or a draw. If a....
+
+
+=======================================
+
+Again, non-recursive:
+
+We pop state from to-explore stack. Can we compute non-draw outcome? If so, mark the state as such.
+
+If not, throw back on stack and add the neighbors. We only add neighbors if not already there. If no neighbors can be added, then this state is discarded. One of earlier stack entries requires a solution.
+
+We recurse through possible states until we hit a state that:
+* is a mouse victory
+* is a cat victory
+* might be a draw
+* is too deep of a recursion
+
+We then back out to parent, try to resolve the parent, then explore its next child.
+
+How do we recognize a recursion that's too deep?
+
+=======================================
+
+More
+
+Neither player will choose a move that leads to a draw in t turns unless the other player can win in t+1 or more turns.
+
+Therefore, we must check every possible state that can be reached in less than t turns to make sure that no one wins.
+
+Breadth-first:
+
+Pull state from left of to-visit queue, add its children to right (if not there already). If a state can be resolved, we put its parent on left of queue.
+
+Depth first:
+
+Pull node from right, add its children to right
+
+
+
+
